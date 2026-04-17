@@ -18,26 +18,33 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Verify the caller is an authenticated admin
-    const anonClient = createClient(
+    const token = authHeader.replace('Bearer ', '')
+
+    // Use service role client to verify JWT via Supabase Auth (avoids ES256 local verification)
+    const adminClient = createClient(
       Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_ANON_KEY')!,
-      { global: { headers: { Authorization: authHeader } } }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     )
-    const { data: { user }, error: userErr } = await anonClient.auth.getUser()
+    const { data: { user }, error: userErr } = await adminClient.auth.getUser(token)
     if (userErr || !user) {
       return new Response(JSON.stringify({ error: 'No autorizado' }), {
         status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
-    const { data: caller, error: callerErr } = await anonClient
+    const { data: caller, error: callerErr } = await adminClient
       .from('usuarios')
       .select('rol')
       .eq('email', user.email)
-      .single()
+      .maybeSingle()
 
-    if (callerErr || caller?.rol !== 'admin') {
+    if (callerErr) {
+      return new Response(JSON.stringify({ error: 'Error verificando rol' }), {
+        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    if (caller?.rol !== 'admin') {
       return new Response(JSON.stringify({ error: 'Solo admins pueden invitar usuarios' }), {
         status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
@@ -49,12 +56,6 @@ Deno.serve(async (req) => {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
-
-    // Use service_role key to invite the user
-    const adminClient = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-    )
 
     const { error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(email, {
       ...(redirectTo ? { redirectTo } : {}),
