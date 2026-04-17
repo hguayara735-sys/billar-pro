@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useAuth } from '../hooks/useAuth'
 import Sidebar from '../components/layout/Sidebar'
 import InicioPage from '../features/dashboard/InicioPage'
 import TablesPage from '../features/tables/TablesPage'
@@ -31,10 +32,16 @@ function SectionPlaceholder({ label }) {
   )
 }
 
+const ADMIN_SECTIONS = ['reportes', 'configuracion', 'usuarios']
+
 export default function DashboardPage() {
   const [activeSection, setActiveSection] = useState('inicio')
+  const { rol } = useAuth()
 
   function renderContent() {
+    if (rol === 'operador' && ADMIN_SECTIONS.includes(activeSection)) {
+      return <InicioPage />
+    }
     switch (activeSection) {
       case 'inicio':         return <InicioPage />
       case 'mesas':          return <TablesPage />
@@ -50,7 +57,7 @@ export default function DashboardPage() {
 
   return (
     <div className="flex h-screen bg-gray-900 overflow-hidden">
-      <Sidebar activeSection={activeSection} onNavigate={setActiveSection} />
+      <Sidebar activeSection={activeSection} onNavigate={setActiveSection} rol={rol} />
       <main className="flex-1 overflow-hidden flex">
         {renderContent()}
       </main>

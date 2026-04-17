@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 
 export function useAuth() {
-  const { user, session, loading, signIn, signOut, setSession } = useAuthStore()
+  const { user, session, loading, rol, signIn, signOut, setSession } = useAuthStore()
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -17,5 +17,5 @@ export function useAuth() {
     return () => subscription.unsubscribe()
   }, [])
 
-  return { user, session, loading, signIn, signOut }
+  return { user, session, loading, rol, signIn, signOut }
 }

@@ -63,8 +63,30 @@ function useUsuariosData() {
       .select('id, nombre, email, rol, activo')
       .single()
 
-    if (error) return error.message
+    if (error) return { dbError: error.message }
+
     setUsuarios(prev => [...prev, data].sort((a, b) => a.nombre.localeCompare(b.nombre)))
+
+    const { data: { session } } = await supabase.auth.getSession()
+    const response = await fetch(
+      'https://gpfnsmzlneeydqgvveks.supabase.co/functions/v1/invite-user',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({
+          email: email.trim(),
+          redirectTo: 'https://billar-pro-orpin.vercel.app'
+        }),
+      }
+    )
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}))
+      return { inviteWarning: err.message ?? `Error ${response.status}` }
+    }
   }
 
   async function updateUsuario(id, nombre, email, rol) {
@@ -261,6 +283,7 @@ function AgregarUsuarioForm({ onAdd }) {
   const [draft,    setDraft]    = useState(EMPTY)
   const [saving,   setSaving]   = useState(false)
   const [error,    setError]    = useState(null)
+  const [warning,  setWarning]  = useState(null)
   const [success,  setSuccess]  = useState(false)
 
   async function handleSubmit(e) {
@@ -268,13 +291,15 @@ function AgregarUsuarioForm({ onAdd }) {
     if (!draft.nombre.trim() || !draft.email.trim()) return
     setSaving(true)
     setError(null)
+    setWarning(null)
     setSuccess(false)
-    const err = await onAdd(draft.nombre, draft.email, draft.rol)
+    const result = await onAdd(draft.nombre, draft.email, draft.rol)
     setSaving(false)
-    if (err) { setError(err); return }
+    if (result?.dbError) { setError(result.dbError); return }
     setDraft(EMPTY)
     setSuccess(true)
-    setTimeout(() => setSuccess(false), 3000)
+    setTimeout(() => setSuccess(false), 5000)
+    if (result?.inviteWarning) setWarning(`Usuario creado, pero falló el email de invitación: ${result.inviteWarning}`)
   }
 
   return (
@@ -325,11 +350,12 @@ function AgregarUsuarioForm({ onAdd }) {
           Guardar usuario
         </button>
         {error   && <span className="text-xs text-red-400">{error}</span>}
-        {success && <span className="text-xs text-green-400">Usuario agregado correctamente</span>}
+        {success && !warning && <span className="text-xs text-green-400">Usuario creado · email de invitación enviado</span>}
+        {warning && <span className="text-xs text-yellow-400">{warning}</span>}
       </div>
 
       <p className="text-xs text-gray-600">
-        La contraseña se configurará cuando se active el inicio de sesión.
+        El operador recibirá un email para crear su contraseña.
       </p>
     </form>
   )
