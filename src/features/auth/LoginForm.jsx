@@ -41,7 +41,7 @@ export default function LoginForm() {
     setResetLoading(true)
     setResetError(null)
     const { error: err } = await supabase.auth.resetPasswordForEmail(resetEmail.trim(), {
-      redirectTo: 'https://billar-pro-orpin.vercel.app',
+      redirectTo: 'https://billar-pro-orpin.vercel.app/reset-password',
     })
     setResetLoading(false)
     if (err) { setResetError(err.message); return }
