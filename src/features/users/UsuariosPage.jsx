@@ -65,6 +65,21 @@ function useUsuariosData() {
 
     if (error) return { dbError: error.message }
 
+    const tempPassword = crypto.randomUUID().replace(/-/g, '') + 'Aa1!'
+    const { error: signUpError } = await supabase.auth.signUp({
+      email: email.trim(),
+      password: tempPassword,
+    })
+    if (signUpError && signUpError.message !== 'User already registered') {
+      return { dbError: signUpError.message }
+    }
+
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+      email.trim(),
+      { redirectTo: 'https://billar-pro-orpin.vercel.app/reset-password' },
+    )
+    if (resetError) return { dbError: resetError.message }
+
     setUsuarios(prev => [...prev, data].sort((a, b) => a.nombre.localeCompare(b.nombre)))
   }
 
@@ -329,13 +344,9 @@ function AgregarUsuarioForm({ onAdd }) {
       </div>
 
       {success && (
-        <div className="text-xs text-green-400 leading-relaxed">
-          <p className="font-medium">Usuario creado correctamente.</p>
-          <p className="mt-1">Comparte esta URL con el operador:</p>
-          <p className="font-mono text-green-300">https://billar-pro-orpin.vercel.app</p>
-          <p className="mt-1">El operador debe usar su email y hacer clic en<br />
-          <span className="italic">Olvidé mi contraseña</span> para crear su acceso.</p>
-        </div>
+        <p className="text-xs text-green-400 font-medium">
+          Usuario creado. Se envió un correo de invitación a su email.
+        </p>
       )}
     </form>
   )
