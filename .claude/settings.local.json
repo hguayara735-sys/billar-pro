@@ -3,7 +3,13 @@
     "allow": [
       "Bash(npm run *)",
       "Bash(curl -s http://localhost:5177)",
-      "Bash(npx kill-port *)"
+      "Bash(npx kill-port *)",
+      "Bash(npm install *)",
+      "Bash(npm list *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(npx supabase *)"
     ]
   }
 }

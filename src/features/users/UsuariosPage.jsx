@@ -66,16 +66,6 @@ function useUsuariosData() {
     if (error) return { dbError: error.message }
 
     setUsuarios(prev => [...prev, data].sort((a, b) => a.nombre.localeCompare(b.nombre)))
-
-    const { data: { session } } = await supabase.auth.getSession()
-    const { data: inviteData, error: inviteError } = await supabase.functions.invoke('invite-user', {
-      body: { email: email.trim(), redirectTo: 'https://billar-pro-orpin.vercel.app' },
-      headers: { Authorization: `Bearer ${session?.access_token}` },
-    })
-
-    if (inviteError) {
-      return { inviteWarning: inviteError.message ?? 'Error al enviar invitación' }
-    }
   }
 
   async function updateUsuario(id, nombre, email, rol) {
@@ -269,26 +259,23 @@ function UsuariosTable({ usuarios, onUpdate, onToggle }) {
 const EMPTY = { nombre: '', email: '', rol: 'operador' }
 
 function AgregarUsuarioForm({ onAdd }) {
-  const [draft,    setDraft]    = useState(EMPTY)
-  const [saving,   setSaving]   = useState(false)
-  const [error,    setError]    = useState(null)
-  const [warning,  setWarning]  = useState(null)
-  const [success,  setSuccess]  = useState(false)
+  const [draft,   setDraft]   = useState(EMPTY)
+  const [saving,  setSaving]  = useState(false)
+  const [error,   setError]   = useState(null)
+  const [success, setSuccess] = useState(false)
 
   async function handleSubmit(e) {
     e.preventDefault()
     if (!draft.nombre.trim() || !draft.email.trim()) return
     setSaving(true)
     setError(null)
-    setWarning(null)
     setSuccess(false)
     const result = await onAdd(draft.nombre, draft.email, draft.rol)
     setSaving(false)
     if (result?.dbError) { setError(result.dbError); return }
     setDraft(EMPTY)
     setSuccess(true)
-    setTimeout(() => setSuccess(false), 5000)
-    if (result?.inviteWarning) setWarning(`Usuario creado, pero falló el email de invitación: ${result.inviteWarning}`)
+    setTimeout(() => setSuccess(false), 12000)
   }
 
   return (
@@ -338,14 +325,18 @@ function AgregarUsuarioForm({ onAdd }) {
           {saving ? <Loader2 size={14} className="animate-spin" /> : <UserPlus size={14} />}
           Guardar usuario
         </button>
-        {error   && <span className="text-xs text-red-400">{error}</span>}
-        {success && !warning && <span className="text-xs text-green-400">Usuario creado · email de invitación enviado</span>}
-        {warning && <span className="text-xs text-yellow-400">{warning}</span>}
+        {error && <span className="text-xs text-red-400">{error}</span>}
       </div>
 
-      <p className="text-xs text-gray-600">
-        El operador recibirá un email para crear su contraseña.
-      </p>
+      {success && (
+        <div className="text-xs text-green-400 leading-relaxed">
+          <p className="font-medium">Usuario creado correctamente.</p>
+          <p className="mt-1">Comparte esta URL con el operador:</p>
+          <p className="font-mono text-green-300">https://billar-pro-orpin.vercel.app</p>
+          <p className="mt-1">El operador debe usar su email y hacer clic en<br />
+          <span className="italic">Olvidé mi contraseña</span> para crear su acceso.</p>
+        </div>
+      )}
     </form>
   )
 }
