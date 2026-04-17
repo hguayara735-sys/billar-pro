@@ -13,6 +13,20 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    // Parse hash manually — Supabase v2 doesn't always fire PASSWORD_RECOVERY
+    const hash = window.location.hash.substring(1);
+    const params = new URLSearchParams(hash);
+    if (params.get("type") === "recovery") {
+      const access_token = params.get("access_token");
+      const refresh_token = params.get("refresh_token") ?? "";
+      if (access_token) {
+        supabase.auth.setSession({ access_token, refresh_token }).then(() => {
+          setReady(true);
+        });
+        return;
+      }
+    }
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") {
         setReady(true);
