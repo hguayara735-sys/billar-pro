@@ -14,7 +14,8 @@ Deno.serve(async (req) => {
     console.error('FUNCTION STARTED')
     // Read body first before any async checks to avoid stream exhaustion
     const body = await req.json().catch(() => ({}))
-    const { email, redirectTo } = body
+    const { email } = body
+    const redirectTo = 'https://billar-pro-orpin.vercel.app/reset-password'
 
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
@@ -65,7 +66,7 @@ Deno.serve(async (req) => {
     }
 
     const { error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(email, {
-      ...(redirectTo ? { redirectTo } : {}),
+      redirectTo,
     })
 
     console.error('INVITE ERROR:', inviteErr?.message)

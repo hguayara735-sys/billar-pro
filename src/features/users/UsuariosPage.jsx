@@ -58,40 +58,37 @@ function useUsuariosData() {
 
   async function addUsuario(nombre, email, rol) {
     try {
-      console.log('[addUsuario] 1. Insertando en tabla usuarios…', { salonId, nombre, email, rol })
       const { data, error } = await supabase
         .from('usuarios')
         .insert({ salon_id: salonId, nombre: nombre.trim(), email: email.trim(), rol })
         .select('id, nombre, email, rol, activo')
         .single()
-      console.log('[addUsuario] 2. Resultado insert →', { data, error })
 
       if (error) return { dbError: `[insert] ${error.message} (code: ${error.code})` }
 
-      const tempPassword = crypto.randomUUID().replace(/-/g, '') + 'Aa1!'
-      console.log('[addUsuario] 3. Llamando signUp para', email.trim())
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email: email.trim(),
-        password: tempPassword,
-      })
-      console.log('[addUsuario] 4. Resultado signUp →', { signUpData, signUpError })
+      const { data: sessionData } = await supabase.auth.getSession()
+      const token = sessionData?.session?.access_token
+      if (!token) return { dbError: 'No hay sesión activa' }
 
-      if (signUpError && signUpError.message !== 'User already registered') {
-        return { dbError: `[signUp] ${signUpError.message}` }
-      }
-
-      console.log('[addUsuario] 5. Llamando resetPasswordForEmail para', email.trim())
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-        email.trim(),
-        { redirectTo: 'https://billar-pro-orpin.vercel.app/reset-password' },
+      const res = await fetch(
+        'https://gpfnsmzlneeydqgvveks.supabase.co/functions/v1/invite-user',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ email: email.trim() }),
+        },
       )
-      console.log('[addUsuario] 6. Resultado resetPassword →', { resetError })
 
-      if (resetError) return { dbError: `[resetPassword] ${resetError.message}` }
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}))
+        return { dbError: json.error ?? `Error enviando invitación (${res.status})` }
+      }
 
       setUsuarios(prev => [...prev, data].sort((a, b) => a.nombre.localeCompare(b.nombre)))
     } catch (err) {
-      console.error('[addUsuario] Excepción inesperada:', err)
       return { dbError: `Error inesperado: ${err?.message ?? String(err)}` }
     }
   }
