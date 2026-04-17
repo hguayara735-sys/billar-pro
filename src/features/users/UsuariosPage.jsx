@@ -68,24 +68,13 @@ function useUsuariosData() {
     setUsuarios(prev => [...prev, data].sort((a, b) => a.nombre.localeCompare(b.nombre)))
 
     const { data: { session } } = await supabase.auth.getSession()
-    const response = await fetch(
-      'https://gpfnsmzlneeydqgvveks.supabase.co/functions/v1/invite-user',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`,
-        },
-        body: JSON.stringify({
-          email: email.trim(),
-          redirectTo: 'https://billar-pro-orpin.vercel.app'
-        }),
-      }
-    )
+    const { data: inviteData, error: inviteError } = await supabase.functions.invoke('invite-user', {
+      body: { email: email.trim(), redirectTo: 'https://billar-pro-orpin.vercel.app' },
+      headers: { Authorization: `Bearer ${session?.access_token}` },
+    })
 
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}))
-      return { inviteWarning: err.message ?? `Error ${response.status}` }
+    if (inviteError) {
+      return { inviteWarning: inviteError.message ?? 'Error al enviar invitación' }
     }
   }
 
