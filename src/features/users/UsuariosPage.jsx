@@ -72,6 +72,7 @@ function useUsuariosData() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdwZm5zbXpsbmVleWRxZ3Z2ZWtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MjMwMzUsImV4cCI6MjA5MDk5OTAzNX0.rAOH3bYPkuEFVhQ4HAwnYQ-yHtgQPPTQtXbulZv9B_E',
           },
           body: JSON.stringify({ email: email.trim() }),
         },
