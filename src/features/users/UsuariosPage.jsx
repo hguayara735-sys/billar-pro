@@ -66,17 +66,12 @@ function useUsuariosData() {
 
       if (error) return { dbError: `[insert] ${error.message} (code: ${error.code})` }
 
-      const { data: sessionData } = await supabase.auth.getSession()
-      const token = sessionData?.session?.access_token
-      if (!token) return { dbError: 'No hay sesión activa' }
-
       const res = await fetch(
         'https://gpfnsmzlneeydqgvveks.supabase.co/functions/v1/invite-user',
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
           },
           body: JSON.stringify({ email: email.trim() }),
         },
