@@ -58,28 +58,6 @@ function useUsuariosData() {
 
   async function addUsuario(nombre, email, rol) {
     try {
-      const res = await fetch(
-        'https://gpfnsmzlneeydqgvveks.supabase.co/functions/v1/invite-user',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdwZm5zbXpsbmVleWRxZ3Z2ZWtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MjMwMzUsImV4cCI6MjA5MDk5OTAzNX0.rAOH3bYPkuEFVhQ4HAwnYQ-yHtgQPPTQtXbulZv9B_E',
-          },
-          body: JSON.stringify({ email: email.trim() }),
-        },
-      )
-
-      if (!res.ok) {
-        const json = await res.json().catch(() => ({}))
-        return { dbError: json.error ?? `Error enviando invitación (${res.status})` }
-      }
-
-      const { error: resetErr } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: 'https://billar-pro-orpin.vercel.app/reset-password',
-      })
-      if (resetErr) return { dbError: `[resetPassword] ${resetErr.message}` }
-
       const { data, error } = await supabase
         .from('usuarios')
         .insert({ salon_id: salonId, nombre: nombre.trim(), email: email.trim(), rol })
@@ -356,7 +334,7 @@ function AgregarUsuarioForm({ onAdd }) {
 
       {success && (
         <p className="text-xs text-green-400 font-medium">
-          Usuario creado. Se envió un correo de invitación a su email.
+          Usuario creado. Indícale al operador que ingrese a https://billar-pro-orpin.vercel.app y haga clic en ¿Olvidaste tu contraseña? para crear su acceso.
         </p>
       )}
     </form>
