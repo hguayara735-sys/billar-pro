@@ -58,6 +58,11 @@ function useUsuariosData() {
 
   async function addUsuario(nombre, email, rol) {
     try {
+      const { error: resetErr } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: 'https://billar-pro-orpin.vercel.app/reset-password',
+      })
+      if (resetErr) return { dbError: `[resetPassword] ${resetErr.message}` }
+
       const { data, error } = await supabase
         .from('usuarios')
         .insert({ salon_id: salonId, nombre: nombre.trim(), email: email.trim(), rol })
@@ -82,11 +87,6 @@ function useUsuariosData() {
         const json = await res.json().catch(() => ({}))
         return { dbError: json.error ?? `Error enviando invitación (${res.status})` }
       }
-
-      const { error: resetErr } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: 'https://billar-pro-orpin.vercel.app/reset-password',
-      })
-      if (resetErr) return { dbError: `[resetPassword] ${resetErr.message}` }
 
       setUsuarios(prev => [...prev, data].sort((a, b) => a.nombre.localeCompare(b.nombre)))
     } catch (err) {
