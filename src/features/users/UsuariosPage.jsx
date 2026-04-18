@@ -87,6 +87,11 @@ function useUsuariosData() {
         return { dbError: json.error ?? `Error enviando invitación (${res.status})` }
       }
 
+      const { error: resetErr } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: 'https://billar-pro-orpin.vercel.app/reset-password',
+      })
+      if (resetErr) return { dbError: `[resetPassword] ${resetErr.message}` }
+
       setUsuarios(prev => [...prev, data].sort((a, b) => a.nombre.localeCompare(b.nombre)))
     } catch (err) {
       return { dbError: `Error inesperado: ${err?.message ?? String(err)}` }
