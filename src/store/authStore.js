@@ -22,6 +22,7 @@ export const useAuthStore = create((set) => ({
       .single()
     if (data?.rol) rol = data.rol
     if (data?.salon_id) salonId = data.salon_id
+    console.log('[authStore] rol:', rol, '| salonId:', salonId, '| email:', session.user.email)
     set({ session, user: session.user, loading: false, rol, salonId })
   },
 
