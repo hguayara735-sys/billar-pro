@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { Save, Plus, Pencil, X, Check, ToggleLeft, ToggleRight, Loader2 } from 'lucide-react'
-
-const SALON_NAME = 'Billar Tito'
+import { useAuthStore } from '../../store/authStore'
 
 // ─── Hook ────────────────────────────────────────────────────────────────────
 
@@ -12,35 +11,34 @@ function useConfigData() {
   const [tarifas,  setTarifas]  = useState([])
   const [loading,  setLoading]  = useState(true)
   const [error,    setError]    = useState(null)
+  const salonSeleccionado = useAuthStore(s => s.salonSeleccionado)
 
   useEffect(() => {
+    if (!salonSeleccionado?.id) return
     let cancelled = false
     async function load() {
       setLoading(true)
       setError(null)
       try {
-        const { data: salones, error: salonErr } = await supabase
+        const { data: salonData, error: salonErr } = await supabase
           .from('salones')
           .select('id, nombre, direccion, nit')
-          .eq('nombre', SALON_NAME)
-          .limit(1)
+          .eq('id', salonSeleccionado.id)
+          .single()
 
         if (salonErr) throw salonErr
-        if (!salones?.length) throw new Error(`Salón "${SALON_NAME}" no encontrado.`)
-
-        const s = salones[0]
 
         const { data: tarifasData, error: tarifasErr } = await supabase
           .from('tarifas')
           .select('id, nombre, precio_hora, activo')
-          .eq('salon_id', s.id)
+          .eq('salon_id', salonSeleccionado.id)
           .order('nombre')
 
         if (tarifasErr) throw tarifasErr
 
         if (!cancelled) {
-          setSalonId(s.id)
-          setSalon({ nombre: s.nombre ?? '', direccion: s.direccion ?? '', nit: s.nit ?? '' })
+          setSalonId(salonData.id)
+          setSalon({ nombre: salonData.nombre ?? '', direccion: salonData.direccion ?? '', nit: salonData.nit ?? '' })
           setTarifas(tarifasData ?? [])
         }
       } catch (err) {
@@ -51,7 +49,7 @@ function useConfigData() {
     }
     load()
     return () => { cancelled = true }
-  }, [])
+  }, [salonSeleccionado?.id])
 
   async function updateSalon(fields) {
     const { error } = await supabase

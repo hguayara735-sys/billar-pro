@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
-
-const SALON_NAME = 'Billar Tito'
+import { useAuthStore } from '../../store/authStore'
 
 export function useDashboardData() {
   const [tables,   setTables]   = useState([])
@@ -11,6 +10,7 @@ export function useDashboardData() {
   const [loading,  setLoading]  = useState(true)
   const [error,    setError]    = useState(null)
   const salonIdRef = useRef(null)
+  const salonSeleccionado = useAuthStore(s => s.salonSeleccionado)
 
   const loadData = useCallback(async () => {
     const sid = salonIdRef.current
@@ -106,37 +106,23 @@ export function useDashboardData() {
     })
   }, [])
 
-  // Carga inicial — resuelve salon_id y luego carga datos
+  // Carga inicial — usa salonSeleccionado del store
   useEffect(() => {
+    if (!salonSeleccionado?.id) return
     let cancelled = false
 
     async function init() {
       setLoading(true)
       setError(null)
-
-      const { data: salons, error: salonErr } = await supabase
-        .from('salones')
-        .select('id')
-        .eq('nombre', SALON_NAME)
-        .limit(1)
-
-      if (cancelled) return
-
-      if (salonErr || !salons?.length) {
-        setError(salonErr?.message ?? `Salón "${SALON_NAME}" no encontrado`)
-        setLoading(false)
-        return
-      }
-
-      salonIdRef.current = salons[0].id
-      setSalonId(salons[0].id)
+      salonIdRef.current = salonSeleccionado.id
+      setSalonId(salonSeleccionado.id)
       await loadData()
       if (!cancelled) setLoading(false)
     }
 
     init()
     return () => { cancelled = true }
-  }, [loadData])
+  }, [salonSeleccionado?.id, loadData])
 
   // Realtime — escucha cambios en mesas, sesiones, facturas y alertas
   useEffect(() => {

@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { Loader2, Pencil, X, Check, ToggleLeft, ToggleRight, UserPlus } from 'lucide-react'
-
-const SALON_NAME = 'Billar Tito'
+import { useAuthStore } from '../../store/authStore'
 
 const ROLES = [
   { value: 'operador', label: 'Operador' },
@@ -16,23 +15,16 @@ function useUsuariosData() {
   const [usuarios,  setUsuarios]  = useState([])
   const [loading,   setLoading]   = useState(true)
   const [error,     setError]     = useState(null)
+  const salonSeleccionado = useAuthStore(s => s.salonSeleccionado)
 
   useEffect(() => {
+    if (!salonSeleccionado?.id) return
     let cancelled = false
     async function load() {
       setLoading(true)
       setError(null)
       try {
-        const { data: salons, error: salonErr } = await supabase
-          .from('salones')
-          .select('id')
-          .eq('nombre', SALON_NAME)
-          .limit(1)
-
-        if (salonErr) throw salonErr
-        if (!salons?.length) throw new Error(`Salón "${SALON_NAME}" no encontrado.`)
-
-        const id = salons[0].id
+        const id = salonSeleccionado.id
 
         const { data, error: usrErr } = await supabase
           .from('usuarios')
@@ -54,7 +46,7 @@ function useUsuariosData() {
     }
     load()
     return () => { cancelled = true }
-  }, [])
+  }, [salonSeleccionado?.id])
 
   async function addUsuario(nombre, email, rol) {
     try {

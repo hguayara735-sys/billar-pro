@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
-
-const SALON_NAME = 'Billar Tito'
+import { useAuthStore } from '../../store/authStore'
 
 function mapProduct(row) {
   return {
@@ -34,8 +33,10 @@ export function useTablesData() {
   const [salonId,  setSalonId]  = useState(null)
   const [loading,  setLoading]  = useState(true)
   const [error,    setError]    = useState(null)
+  const salonSeleccionado = useAuthStore(s => s.salonSeleccionado)
 
   useEffect(() => {
+    if (!salonSeleccionado?.id) return
     let cancelled = false
 
     async function load() {
@@ -43,20 +44,9 @@ export function useTablesData() {
       setError(null)
 
       try {
-        // 1. Resolve salon id
-        const { data: salons, error: salonErr } = await supabase
-          .from('salones')
-          .select('id')
-          .eq('nombre', SALON_NAME)
-          .limit(1)
+        const salonId = salonSeleccionado.id
 
-        if (salonErr) throw salonErr
-        if (!salons?.length)
-          throw new Error(`Salón "${SALON_NAME}" no encontrado. Ejecuta seed.sql primero.`)
-
-        const salonId = salons[0].id
-
-        // 2. Load mesas and productos in parallel
+        // 1. Load mesas and productos in parallel
         const [mesasRes, prodRes] = await Promise.all([
           supabase
             .from('mesas')
@@ -141,7 +131,7 @@ export function useTablesData() {
 
     load()
     return () => { cancelled = true }
-  }, [])
+  }, [salonSeleccionado?.id])
 
   // ── Abrir mesa ────────────────────────────────────────────────────────────
   async function openTable(id) {

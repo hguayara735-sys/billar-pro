@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { RotateCcw, Bell, CreditCard, RefreshCw, X, ListRestart } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
-
-const SALON_NAME = 'Billar Tito'
+import { useAuthStore } from '../../store/authStore'
 
 // ─── Player color themes ─────────────────────────────────────────────────────
 
@@ -314,28 +313,18 @@ export default function ScoringPage() {
   const [salonId,        setSalonId]        = useState(null)
   const [selectedMesaId, setSelectedMesaId] = useState('')
   const [bellSending,    setBellSending]    = useState(false)
+  const salonSeleccionado = useAuthStore(s => s.salonSeleccionado)
 
   useEffect(() => {
-    let salonIdLocal = null
+    if (!salonSeleccionado?.id) return
+    const sid = salonSeleccionado.id
+    setSalonId(sid)
 
     async function loadMesas() {
-      // Resolve salon the first time
-      if (!salonIdLocal) {
-        const { data: salons } = await supabase
-          .from('salones')
-          .select('id')
-          .eq('nombre', SALON_NAME)
-          .limit(1)
-
-        if (!salons?.length) return
-        salonIdLocal = salons[0].id
-        setSalonId(salons[0].id)
-      }
-
       const { data: mesas } = await supabase
         .from('mesas')
         .select('id, nombre')
-        .eq('salon_id', salonIdLocal)
+        .eq('salon_id', sid)
         .eq('estado', 'activa')
         .order('numero')
 
@@ -358,7 +347,7 @@ export default function ScoringPage() {
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
-  }, [])
+  }, [salonSeleccionado?.id])
 
   // ── Handlers ─────────────────────────────────────────────────────────────
 

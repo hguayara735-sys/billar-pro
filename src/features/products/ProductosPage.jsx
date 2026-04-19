@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { Plus, Pencil, X, Check, ToggleLeft, ToggleRight, Loader2 } from 'lucide-react'
-
-const SALON_NAME = 'Billar Tito'
+import { useAuthStore } from '../../store/authStore'
 
 const TAX_OPTIONS = [
   { label: 'Sin IVA (0%)',   value: 0     },
@@ -24,23 +23,16 @@ function useProductosData() {
   const [productos, setProductos] = useState([])
   const [loading,   setLoading]   = useState(true)
   const [error,     setError]     = useState(null)
+  const salonSeleccionado = useAuthStore(s => s.salonSeleccionado)
 
   useEffect(() => {
+    if (!salonSeleccionado?.id) return
     let cancelled = false
     async function load() {
       setLoading(true)
       setError(null)
       try {
-        const { data: salons, error: salonErr } = await supabase
-          .from('salones')
-          .select('id')
-          .eq('nombre', SALON_NAME)
-          .limit(1)
-
-        if (salonErr) throw salonErr
-        if (!salons?.length) throw new Error(`Salón "${SALON_NAME}" no encontrado.`)
-
-        const id = salons[0].id
+        const id = salonSeleccionado.id
 
         const { data, error: prodErr } = await supabase
           .from('productos')
@@ -62,7 +54,7 @@ function useProductosData() {
     }
     load()
     return () => { cancelled = true }
-  }, [])
+  }, [salonSeleccionado?.id])
 
   async function addProducto(fields) {
     const { data, error } = await supabase
