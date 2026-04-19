@@ -39,7 +39,6 @@ const SUPERADMIN_SECTIONS = ['salones']
 export default function DashboardPage() {
   const [activeSection, setActiveSection] = useState('inicio')
   const { rol } = useAuth()
-  console.log('[DashboardPage] rol:', rol)
 
   function renderContent() {
     if (SUPERADMIN_SECTIONS.includes(activeSection) && rol !== 'superadmin') {
