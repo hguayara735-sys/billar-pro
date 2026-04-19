@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Home, CircleDot, Trophy, Package, DollarSign, BarChart2, Settings, Users, Building2, ChevronDown, Check } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import { useAuthStore } from '../../store/authStore'
 
 const NAV_ITEMS = [
   { id: 'inicio',         label: 'Inicio',         icon: Home },
@@ -19,6 +20,7 @@ function SalonSelector({ rol }) {
   const [selected, setSelected]     = useState(null)
   const [open, setOpen]             = useState(false)
   const ref                         = useRef(null)
+  const setSalonSeleccionado        = useAuthStore(s => s.setSalonSeleccionado)
 
   useEffect(() => {
     if (rol !== 'admin' && rol !== 'superadmin') return
@@ -26,6 +28,7 @@ function SalonSelector({ rol }) {
       if (data?.length) {
         setSalones(data)
         setSelected(data[0])
+        setSalonSeleccionado(data[0])
       }
     })
   }, [rol])
@@ -65,7 +68,7 @@ function SalonSelector({ rol }) {
           {salones.map(salon => (
             <button
               key={salon.id}
-              onClick={() => { setSelected(salon); setOpen(false) }}
+              onClick={() => { setSelected(salon); setSalonSeleccionado(salon); setOpen(false) }}
               className="w-full flex items-center justify-between px-3 py-2 text-sm
                 hover:bg-gray-800 transition-colors"
             >

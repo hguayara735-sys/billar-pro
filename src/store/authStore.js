@@ -7,6 +7,7 @@ export const useAuthStore = create((set) => ({
   loading: true,
   rol: null,
   salonId: null,
+  salonSeleccionado: null,
 
   setSession: async (session) => {
     if (!session) {
@@ -24,6 +25,8 @@ export const useAuthStore = create((set) => ({
     if (data?.salon_id) salonId = data.salon_id
 set({ session, user: session.user, loading: false, rol, salonId })
   },
+
+  setSalonSeleccionado: (salon) => set({ salonSeleccionado: salon }),
 
   signIn: async (email, password) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
