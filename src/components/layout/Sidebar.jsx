@@ -86,7 +86,7 @@ function SalonSelector({ rol }) {
 
 export default function Sidebar({ activeSection, onNavigate, rol }) {
   return (
-    <aside className="flex flex-col w-56 min-h-screen bg-gray-950 border-r border-gray-800">
+    <aside className="relative flex flex-col w-56 min-h-screen bg-gray-950 border-r border-gray-800">
       {/* Logo */}
       <div className="flex items-center gap-2 px-5 py-5 border-b border-gray-800">
         <CircleDot className="text-indigo-400" size={22} />
@@ -116,6 +116,21 @@ export default function Sidebar({ activeSection, onNavigate, rol }) {
           )
         })}
       </nav>
+
+      <img
+        src="/firma.png"
+        alt=""
+        style={{
+          position: 'absolute',
+          bottom: '16px',
+          left: '50%',
+          transform: 'translateX(-50%) rotate(-15deg)',
+          opacity: 0.3,
+          pointerEvents: 'none',
+          zIndex: 0,
+          width: '160px',
+        }}
+      />
     </aside>
   )
 }
