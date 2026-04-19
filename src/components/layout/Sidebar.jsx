@@ -122,12 +122,13 @@ export default function Sidebar({ activeSection, onNavigate, rol }) {
         alt=""
         style={{
           display: 'block',
-          width: '320px',
-          opacity: 0.6,
+          width: '220px',
+          opacity: 0.9,
           transform: 'rotate(-15deg)',
           margin: '0 auto',
           marginTop: '24px',
           pointerEvents: 'none',
+          filter: 'brightness(0) invert(1)',
         }}
       />
     </aside>
