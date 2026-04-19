@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
-import { Loader2, Pencil, X, Check, ToggleLeft, ToggleRight, Building2Plus } from 'lucide-react'
+import { Loader2, Pencil, X, Check, ToggleLeft, ToggleRight, PlusSquare } from 'lucide-react'
 
 // ─── Hook ────────────────────────────────────────────────────────────────────
 
@@ -257,7 +257,7 @@ function AgregarSalonForm({ onAdd }) {
           className="flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium
             hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
-          {saving ? <Loader2 size={14} className="animate-spin" /> : <Building2Plus size={14} />}
+          {saving ? <Loader2 size={14} className="animate-spin" /> : <PlusSquare size={14} />}
           Guardar salón
         </button>
         {error && <span className="text-xs text-red-400">{error}</span>}
