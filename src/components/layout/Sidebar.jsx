@@ -1,7 +1,10 @@
-import { Home, CircleDot, Trophy, Package, DollarSign, BarChart2, Settings, Users } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Home, CircleDot, Trophy, Package, DollarSign, BarChart2, Settings, Users, Building2, ChevronDown, Check } from 'lucide-react'
+import { supabase } from '../../lib/supabase'
 
 const NAV_ITEMS = [
   { id: 'inicio',         label: 'Inicio',         icon: Home },
+  { id: 'salones',        label: 'Salones',        icon: Building2,  adminOnly: true },
   { id: 'mesas',          label: 'Mesas',          icon: CircleDot },
   { id: 'marcador',       label: 'Marcador',       icon: Trophy },
   { id: 'productos',      label: 'Productos',      icon: Package },
@@ -10,6 +13,73 @@ const NAV_ITEMS = [
   { id: 'configuracion',  label: 'Configuración',  icon: Settings,   adminOnly: true },
   { id: 'usuarios',       label: 'Usuarios',       icon: Users,      adminOnly: true },
 ]
+
+function SalonSelector({ rol }) {
+  const [salones, setSalones]       = useState([])
+  const [selected, setSelected]     = useState(null)
+  const [open, setOpen]             = useState(false)
+  const ref                         = useRef(null)
+
+  useEffect(() => {
+    if (rol !== 'admin' && rol !== 'superadmin') return
+    supabase.from('salones').select('id, nombre').order('nombre').then(({ data }) => {
+      if (data?.length) {
+        setSalones(data)
+        setSelected(data[0])
+      }
+    })
+  }, [rol])
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  if (rol !== 'admin' && rol !== 'superadmin') return null
+
+  return (
+    <div ref={ref} className="relative px-3 py-3 border-b border-gray-800">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg
+          bg-gray-900 border border-gray-700 hover:border-indigo-500 transition-colors"
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <Building2 size={14} className="text-indigo-400 shrink-0" />
+          <span className="text-sm text-white truncate">
+            {selected ? selected.nombre : 'Seleccionar salón'}
+          </span>
+        </div>
+        <ChevronDown
+          size={14}
+          className={`text-gray-400 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}
+        />
+      </button>
+
+      {open && (
+        <div className="absolute left-3 right-3 top-full mt-1 z-50 bg-gray-900 border border-gray-700
+          rounded-lg shadow-lg overflow-hidden">
+          {salones.map(salon => (
+            <button
+              key={salon.id}
+              onClick={() => { setSelected(salon); setOpen(false) }}
+              className="w-full flex items-center justify-between px-3 py-2 text-sm
+                hover:bg-gray-800 transition-colors"
+            >
+              <span className={selected?.id === salon.id ? 'text-indigo-400' : 'text-gray-300'}>
+                {salon.nombre}
+              </span>
+              {selected?.id === salon.id && <Check size={13} className="text-indigo-400" />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function Sidebar({ activeSection, onNavigate, rol }) {
   return (
@@ -20,9 +90,12 @@ export default function Sidebar({ activeSection, onNavigate, rol }) {
         <span className="text-white font-bold text-lg tracking-tight">Billar Pro</span>
       </div>
 
+      {/* Selector de salón */}
+      <SalonSelector rol={rol} />
+
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-1">
-        {NAV_ITEMS.filter(item => !item.adminOnly || rol === 'admin').map(({ id, label, icon: Icon }) => {
+        {NAV_ITEMS.filter(item => !item.adminOnly || rol === 'admin' || rol === 'superadmin').map(({ id, label, icon: Icon }) => {
           const active = activeSection === id
           return (
             <button

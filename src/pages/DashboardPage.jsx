@@ -9,6 +9,7 @@ import ProductosPage from '../features/products/ProductosPage'
 import CajaPage from '../features/cash/CajaPage'
 import ReportesPage from '../features/reports/ReportesPage'
 import UsuariosPage from '../features/users/UsuariosPage'
+import SalonesPage from '../features/salones/SalonesPage'
 
 const SECTION_LABELS = {
   inicio:        'Inicio',
@@ -33,17 +34,22 @@ function SectionPlaceholder({ label }) {
 }
 
 const ADMIN_SECTIONS = ['reportes', 'configuracion', 'usuarios']
+const SUPERADMIN_SECTIONS = ['salones']
 
 export default function DashboardPage() {
   const [activeSection, setActiveSection] = useState('inicio')
   const { rol } = useAuth()
 
   function renderContent() {
+    if (SUPERADMIN_SECTIONS.includes(activeSection) && rol !== 'superadmin') {
+      return <InicioPage />
+    }
     if (rol === 'operador' && ADMIN_SECTIONS.includes(activeSection)) {
       return <InicioPage />
     }
     switch (activeSection) {
       case 'inicio':         return <InicioPage />
+      case 'salones':        return <SalonesPage />
       case 'mesas':          return <TablesPage />
       case 'marcador':       return <ScoringPage />
       case 'configuracion':  return <ConfiguracionPage />
