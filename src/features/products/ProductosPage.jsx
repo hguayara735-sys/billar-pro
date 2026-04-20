@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
-import { Plus, Pencil, X, Check, ToggleLeft, ToggleRight, Loader2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, Check, ToggleLeft, ToggleRight, Loader2 } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
 
 const TAX_OPTIONS = [
@@ -103,7 +103,17 @@ function useProductosData() {
     setProductos(prev => prev.map(p => p.id === id ? { ...p, activo: !activo } : p))
   }
 
-  return { productos, loading, error, addProducto, updateProducto, toggleProducto }
+  async function deleteProducto(id) {
+    const { error } = await supabase
+      .from('productos')
+      .delete()
+      .eq('id', id)
+
+    if (error) return error.message
+    setProductos(prev => prev.filter(p => p.id !== id))
+  }
+
+  return { productos, loading, error, addProducto, updateProducto, toggleProducto, deleteProducto }
 }
 
 // ─── Empty draft ──────────────────────────────────────────────────────────────
@@ -145,7 +155,7 @@ function TaxSelect({ value, onChange }) {
 
 // ─── Main table ───────────────────────────────────────────────────────────────
 
-function ProductosTable({ productos, onAdd, onUpdate, onToggle }) {
+function ProductosTable({ productos, onAdd, onUpdate, onToggle, onDelete }) {
   const [editingId, setEditingId] = useState(null)
   const [editDraft, setEditDraft] = useState(EMPTY_DRAFT)
   const [addDraft,  setAddDraft]  = useState(EMPTY_DRAFT)
@@ -279,12 +289,22 @@ function ProductosTable({ productos, onAdd, onUpdate, onToggle }) {
                     : <><ToggleLeft  size={12} /> Inactivo</>}
                 </button>
               </div>
-              <div className="flex justify-end">
+              <div className="flex justify-end gap-1">
                 <button
                   onClick={() => startEdit(p)}
                   className="p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-gray-700 transition-colors"
                 >
                   <Pencil size={13} />
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!window.confirm('¿Eliminar este producto?')) return
+                    const err = await onDelete(p.id)
+                    if (err) setErrors(prev => ({ ...prev, [p.id]: err }))
+                  }}
+                  className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                >
+                  <Trash2 size={13} />
                 </button>
               </div>
             </div>
@@ -350,7 +370,7 @@ function ProductosTable({ productos, onAdd, onUpdate, onToggle }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ProductosPage() {
-  const { productos, loading, error, addProducto, updateProducto, toggleProducto } = useProductosData()
+  const { productos, loading, error, addProducto, updateProducto, toggleProducto, deleteProducto } = useProductosData()
 
   if (loading) {
     return (
@@ -382,6 +402,7 @@ export default function ProductosPage() {
         onAdd={addProducto}
         onUpdate={updateProducto}
         onToggle={toggleProducto}
+        onDelete={deleteProducto}
       />
     </div>
   )
