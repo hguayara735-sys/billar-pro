@@ -49,8 +49,8 @@ function useCajaData() {
       const { data, error: err } = await supabase
         .from('facturas')
         .select(`
-          id, tiempo_total, valor_tiempo, valor_consumo, total, created_at,
-          sesiones ( inicio, mesas ( nombre ) )
+          id, sesion_id, tiempo_total, valor_tiempo, valor_consumo, total, created_at,
+          sesiones ( id, inicio, mesas ( nombre ) )
         `)
         .gte('created_at', inicioDeHoy())
         .order('created_at', { ascending: false })
