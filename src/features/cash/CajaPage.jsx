@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
+import { useAuthStore } from '../../store/authStore'
 import {
   Loader2, LogIn, LogOut, Printer, Eye, Clock,
   Banknote, ShoppingCart, TableProperties, TrendingUp,
@@ -196,6 +197,7 @@ function DetalleModal({ factura, numero, onClose }) {
   const [consumos, setConsumos] = useState(null)
   const [loadingD, setLoadingD] = useState(true)
   const [errorD,   setErrorD]   = useState(null)
+  const salonNombre = useAuthStore(s => s.salonSeleccionado?.nombre ?? '')
 
   const sesionId = factura.sesiones?.id ?? factura.sesion_id
 
@@ -220,15 +222,15 @@ function DetalleModal({ factura, numero, onClose }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
       <div className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-md mx-4 overflow-hidden print:shadow-none">
 
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
-          <div>
-            <p className="text-white font-bold text-sm">Factura #{numero}</p>
-            <p className="text-gray-400 text-xs mt-0.5">
-              {mesaNombre} · {fmtFecha(factura.created_at)}
-            </p>
-          </div>
-          <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors print:hidden">✕</button>
+        {/* Header tipo tiquete */}
+        <div className="px-5 py-4 border-b border-gray-800 text-center relative">
+          <button onClick={onClose} className="absolute right-4 top-4 text-gray-500 hover:text-white transition-colors print:hidden">✕</button>
+          {salonNombre && (
+            <p className="text-white font-bold text-base tracking-wide">{salonNombre}</p>
+          )}
+          <p className="text-gray-400 text-xs mt-0.5">Factura #{numero}</p>
+          <p className="text-gray-500 text-xs">{mesaNombre}</p>
+          <p className="text-gray-500 text-xs">{fmtFecha(factura.created_at)}</p>
         </div>
 
         {/* Consumos */}

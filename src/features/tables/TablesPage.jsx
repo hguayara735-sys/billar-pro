@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Printer, Save, Trash2, AlertCircle, Loader2 } from 'lucide-react'
+import { Printer, Save, Trash2, AlertCircle, Loader2, X } from 'lucide-react'
 import { useTablesData } from './useTablesData'
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -261,11 +261,79 @@ function AccountPanel({ selectedTable, lines, onDeleteLine, onSave, onPrint }) {
   )
 }
 
+// ─── Modal confirmación cierre ───────────────────────────────────────────────
+
+function ConfirmCloseModal({ table, lines, precioHora, onConfirm, onCancel, closing }) {
+  const mins        = table.startTime ? Math.floor((Date.now() - table.startTime) / 60000) : 0
+  const valorTiempo = (mins / 60) * precioHora
+  const valorConsumo = lines.reduce((s, l) => s + l.valorTotal, 0)
+  const total       = valorTiempo + valorConsumo
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+      <div className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-sm mx-4 overflow-hidden">
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
+          <p className="text-white font-bold text-sm">¿Cerrar {table.name}?</p>
+          <button onClick={onCancel} className="text-gray-500 hover:text-white transition-colors">
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Resumen */}
+        <div className="px-5 py-4 space-y-2">
+          <div className="flex justify-between text-xs text-gray-400">
+            <span>Tiempo jugado</span>
+            <span className="font-mono text-white">{mins} min</span>
+          </div>
+          <div className="flex justify-between text-xs text-gray-400">
+            <span>Valor tiempo</span>
+            <span className="font-mono text-indigo-400">{fmt(valorTiempo)}</span>
+          </div>
+          <div className="flex justify-between text-xs text-gray-400">
+            <span>Consumos ({lines.length} ítem{lines.length !== 1 ? 's' : ''})</span>
+            <span className="font-mono text-amber-400">{fmt(valorConsumo)}</span>
+          </div>
+          <div className="flex justify-between text-sm font-bold text-white pt-2 border-t border-gray-800">
+            <span>TOTAL</span>
+            <span className="font-mono text-green-400">{fmt(total)}</span>
+          </div>
+        </div>
+
+        {/* Botones */}
+        <div className="flex gap-2 px-5 py-4 border-t border-gray-800">
+          <button
+            onClick={onCancel}
+            disabled={closing}
+            className="flex-1 px-4 py-2 rounded-lg bg-gray-700 text-gray-300 text-sm
+              hover:bg-gray-600 disabled:opacity-40 transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={closing}
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg
+              bg-red-600 text-white text-sm font-medium hover:bg-red-500
+              disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            {closing ? <Loader2 size={14} className="animate-spin" /> : null}
+            Confirmar y cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Main page ───────────────────────────────────────────────────────────────
 
 export default function TablesPage() {
-  const { tables, products, cuentas, loading, error, openTable, closeTable, addProduct, deleteLine } = useTablesData()
-  const [selectedId, setSelectedId] = useState(null)
+  const { tables, products, cuentas, precioHora, loading, error, openTable, closeTable, addProduct, deleteLine } = useTablesData()
+  const [selectedId,   setSelectedId]   = useState(null)
+  const [pendingClose, setPendingClose] = useState(null) // { id }
+  const [closing,      setClosing]      = useState(false)
 
   async function handleOpen(id) {
     const err = await openTable(id)
@@ -276,13 +344,21 @@ export default function TablesPage() {
     setSelectedId(id)
   }
 
-  async function handleClose(id) {
-    const err = await closeTable(id)
+  function handleClose(id) {
+    setPendingClose({ id })
+  }
+
+  async function confirmClose() {
+    if (!pendingClose) return
+    setClosing(true)
+    const err = await closeTable(pendingClose.id)
+    setClosing(false)
     if (err) {
       alert(`Error cerrando mesa: ${err}`)
       return
     }
-    if (selectedId === id) setSelectedId(null)
+    if (selectedId === pendingClose.id) setSelectedId(null)
+    setPendingClose(null)
   }
 
   if (loading) {
@@ -316,7 +392,7 @@ export default function TablesPage() {
   }
 
   function handleSave() {
-    alert(`Factura de ${selectedTable?.name} guardada (simulado).`)
+    if (selectedId) handleClose(selectedId)
   }
 
   function handlePrint() {
@@ -328,6 +404,7 @@ export default function TablesPage() {
   const currentLines  = selectedId ? (cuentas[selectedId] ?? []) : []
 
   return (
+    <>
     <div className="flex h-full gap-4 p-4 overflow-hidden">
 
       {/* LEFT — Mesa grid */}
@@ -365,5 +442,23 @@ export default function TablesPage() {
       />
 
     </div>
+
+    {/* Modal confirmación cierre */}
+    {pendingClose && (() => {
+      const table = tables.find(t => t.id === pendingClose.id)
+      const lines = cuentas[pendingClose.id] ?? []
+      if (!table) return null
+      return (
+        <ConfirmCloseModal
+          table={table}
+          lines={lines}
+          precioHora={precioHora}
+          onConfirm={confirmClose}
+          onCancel={() => setPendingClose(null)}
+          closing={closing}
+        />
+      )
+    })()}
+    </>
   )
 }

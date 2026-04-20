@@ -27,12 +27,13 @@ function mapConsumoLine(row) {
 }
 
 export function useTablesData() {
-  const [tables,   setTables]   = useState([])
-  const [products, setProducts] = useState([])
-  const [cuentas,  setCuentas]  = useState({})
-  const [salonId,  setSalonId]  = useState(null)
-  const [loading,  setLoading]  = useState(true)
-  const [error,    setError]    = useState(null)
+  const [tables,     setTables]     = useState([])
+  const [products,   setProducts]   = useState([])
+  const [cuentas,    setCuentas]    = useState({})
+  const [salonId,    setSalonId]    = useState(null)
+  const [precioHora, setPrecioHora] = useState(0)
+  const [loading,    setLoading]    = useState(true)
+  const [error,      setError]      = useState(null)
   const salonSeleccionado = useAuthStore(s => s.salonSeleccionado)
 
   useEffect(() => {
@@ -116,11 +117,21 @@ export function useTablesData() {
           }
         })
 
+        // Load tarifa activa
+        const { data: tarifaData } = await supabase
+          .from('tarifas')
+          .select('precio_hora')
+          .eq('salon_id', salonId)
+          .eq('activo', true)
+          .limit(1)
+          .maybeSingle()
+
         if (!cancelled) {
           setSalonId(salonId)
           setTables(mapped)
           setProducts(prodRes.data.map(mapProduct))
           setCuentas(consumosByMesa)
+          setPrecioHora(tarifaData?.precio_hora ? Number(tarifaData.precio_hora) : 0)
         }
       } catch (err) {
         if (!cancelled) setError(err.message ?? 'Error cargando datos')
@@ -352,5 +363,5 @@ export function useTablesData() {
     }))
   }
 
-  return { tables, setTables, products, cuentas, loading, error, openTable, closeTable, addProduct, deleteLine }
+  return { tables, setTables, products, cuentas, precioHora, loading, error, openTable, closeTable, addProduct, deleteLine }
 }
