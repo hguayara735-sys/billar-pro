@@ -7,6 +7,7 @@ export const useAuthStore = create((set) => ({
   loading: true,
   rol: null,
   salonId: null,
+  nombre: null,
   salonSeleccionado: null,
 
   setSession: async (session) => {
@@ -16,14 +17,16 @@ export const useAuthStore = create((set) => ({
     }
     let rol = 'admin'
     let salonId = null
+    let nombre = null
     const { data } = await supabase
       .from('usuarios')
-      .select('rol, salon_id')
+      .select('rol, salon_id, nombre')
       .eq('email', session.user.email)
       .single()
-    if (data?.rol) rol = data.rol
+    if (data?.rol)      rol     = data.rol
     if (data?.salon_id) salonId = data.salon_id
-set({ session, user: session.user, loading: false, rol, salonId })
+    if (data?.nombre)   nombre  = data.nombre
+    set({ session, user: session.user, loading: false, rol, salonId, nombre })
   },
 
   setSalonSeleccionado: (salon) => set({ salonSeleccionado: salon }),
