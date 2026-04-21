@@ -230,6 +230,7 @@ export function useTablesData() {
         valor_tiempo,
         valor_consumo,
         total,
+        turno_id:       localStorage.getItem('billar_turno_id') ?? null,
       })
 
     if (facturaErr) {

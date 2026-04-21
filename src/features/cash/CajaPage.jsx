@@ -69,6 +69,7 @@ function useCajaData() {
             .select('id, nombre_operador, saldo_inicial, inicio, estado')
             .eq('id', savedId)
             .eq('estado', 'abierto')
+            .eq('salon_id', activeSalonId)
             .maybeSingle()
           if (data) {
             setTurno(data)
